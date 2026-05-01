@@ -32,18 +32,15 @@ Write-Host $modsPath
 
 Write-Host "Fetching mod list from GitHub (content branch)..."
 
-# GitHub API for content branch
-$apiUrl = "https://api.github.com/repos/shurby27/servermods/content?ref=content"
+$apiUrl = "https://api.github.com/repos/Shurby27/Servermods/contents/servermods?ref=content"
 
 $files = Invoke-RestMethod -Uri $apiUrl
 
 foreach ($file in $files) {
     if ($file.type -eq "file" -and $file.name -like "*.jar") {
-        $downloadUrl = $file.download_url
         $output = "$modsPath\$($file.name)"
-
         Write-Host "Downloading $($file.name)..."
-        Invoke-WebRequest -Uri $downloadUrl -OutFile $output
+        Invoke-WebRequest -Uri $file.download_url -OutFile $output
     }
 }
 
