@@ -33,7 +33,7 @@ Write-Host $modsPath
 Write-Host "Fetching mod list from GitHub (content branch)..."
 
 # GitHub API for content branch
-$apiUrl = "https://api.github.com/repos/shurby27/servermods/tree/contents?ref=content"
+$apiUrl = "https://api.github.com/repos/shurby27/servermods/contents?ref=content"
 
 $files = Invoke-RestMethod -Uri $apiUrl
 
