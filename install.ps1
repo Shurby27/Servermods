@@ -3,26 +3,22 @@ $installationsPath = "$mcPath\installations"
 
 # Find Essential Fabric profile
 $profilePath = Get-ChildItem -Path $installationsPath -Directory | Where-Object {
-    $_.Name -like "*1.21.11*Fabric*Essential*"
+    $_.Name -like "*Fabric*Essential*"
 } | Select-Object -First 1
 
 if (-not $profilePath) {
     Write-Host "Essential Fabric profile not found."
-    Write-Host "Launching Essential installer..."
+    Write-Host "Opening Essential website (manual install required)..."
 
-    $essentialUrl = "https://essential.gg/downloads/Essential Installer.jar"
-    $essentialPath = "$env:TEMP\EssentialInstaller.jar"
+    Start-Process "https://essential.gg/download"
 
-    Invoke-WebRequest -Uri $essentialUrl -OutFile $essentialPath
-    Start-Process "java" -ArgumentList "-jar `"$essentialPath`""
-
-    Write-Host "Install Fabric + Essential, then re-run this command."
+    Write-Host ""
+    Write-Host "Install Fabric + Essential, then re-run this script."
     exit
 }
 
 $modsPath = "$($profilePath.FullName)\mods"
 
-# Ensure mods folder exists
 if (!(Test-Path $modsPath)) {
     New-Item -ItemType Directory -Path $modsPath | Out-Null
 }
@@ -30,14 +26,19 @@ if (!(Test-Path $modsPath)) {
 Write-Host "Using mods folder:"
 Write-Host $modsPath
 
-Write-Host "Fetching mod list from GitHub (content branch)..."
-
+# GitHub content branch folder
 $apiUrl = "https://api.github.com/repos/Shurby27/Servermods/contents/servermods?ref=content"
 
-$files = Invoke-RestMethod -Uri $apiUrl
+try {
+    $files = Invoke-RestMethod -Uri $apiUrl
+} catch {
+    Write-Host "ERROR: Cannot fetch mods from GitHub."
+    Write-Host "Check repo path or branch name."
+    exit
+}
 
 foreach ($file in $files) {
-    if ($file.type -eq "file" -and $file.name -like "*.jar") {
+    if ($file.name -like "*.jar") {
         $output = "$modsPath\$($file.name)"
         Write-Host "Downloading $($file.name)..."
         Invoke-WebRequest -Uri $file.download_url -OutFile $output
@@ -45,5 +46,4 @@ foreach ($file in $files) {
 }
 
 Write-Host ""
-Write-Host "All mods installed to Essential profile!"
-Write-Host "Launch Minecraft using Fabric + Essential."
+Write-Host "DONE! Launch Fabric + Essential profile."
