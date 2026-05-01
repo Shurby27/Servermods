@@ -1,14 +1,14 @@
 $mcPath = "$env:APPDATA\.minecraft"
 $installationsPath = "$mcPath\installations"
 
-# Try to find the Essential Fabric profile folder
+# Find Essential Fabric profile
 $profilePath = Get-ChildItem -Path $installationsPath -Directory | Where-Object {
     $_.Name -like "*Fabric*Essential*"
 } | Select-Object -First 1
 
 if (-not $profilePath) {
-    Write-Host "Could not find Essential Fabric profile."
-    Write-Host "Opening Essential installer..."
+    Write-Host "Essential Fabric profile not found."
+    Write-Host "Launching Essential installer..."
 
     $essentialUrl = "https://essential.gg/downloads/Essential Installer.jar"
     $essentialPath = "$env:TEMP\EssentialInstaller.jar"
@@ -16,13 +16,13 @@ if (-not $profilePath) {
     Invoke-WebRequest -Uri $essentialUrl -OutFile $essentialPath
     Start-Process "java" -ArgumentList "-jar `"$essentialPath`""
 
-    Write-Host "Please install Fabric + Essential, then re-run this script."
+    Write-Host "Install Fabric + Essential, then re-run this command."
     exit
 }
 
 $modsPath = "$($profilePath.FullName)\mods"
 
-# Create mods folder if missing
+# Ensure mods folder exists
 if (!(Test-Path $modsPath)) {
     New-Item -ItemType Directory -Path $modsPath | Out-Null
 }
@@ -30,19 +30,23 @@ if (!(Test-Path $modsPath)) {
 Write-Host "Using mods folder:"
 Write-Host $modsPath
 
-Write-Host "Downloading mods..."
+Write-Host "Fetching mod list from GitHub (content branch)..."
 
-$repo = "https://api.github.com/repos/YOUR_USERNAME/YOUR_REPO/contents/mods"
-$files = Invoke-RestMethod -Uri $repo
+# GitHub API for content branch
+$apiUrl = "https://api.github.com/repos/shurby27/servermods/tree/contents?ref=content"
+
+$files = Invoke-RestMethod -Uri $apiUrl
 
 foreach ($file in $files) {
-    if ($file.name -like "*.jar") {
+    if ($file.type -eq "file" -and $file.name -like "*.jar") {
+        $downloadUrl = $file.download_url
         $output = "$modsPath\$($file.name)"
-        Invoke-WebRequest -Uri $file.download_url -OutFile $output
-        Write-Host "Installed $($file.name)"
+
+        Write-Host "Downloading $($file.name)..."
+        Invoke-WebRequest -Uri $downloadUrl -OutFile $output
     }
 }
 
 Write-Host ""
-Write-Host "DONE!"
-Write-Host "Launch the Essential Fabric profile in Minecraft."
+Write-Host "All mods installed to Essential profile!"
+Write-Host "Launch Minecraft using Fabric + Essential."
