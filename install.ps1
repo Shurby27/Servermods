@@ -3,7 +3,7 @@ $installationsPath = "$mcPath\installations"
 
 # Find Essential Fabric profile
 $profilePath = Get-ChildItem -Path $installationsPath -Directory | Where-Object {
-    $_.Name -like "*Fabric*Essential*"
+    $_.Name -like "*1.21.11*Fabric*Essential*"
 } | Select-Object -First 1
 
 if (-not $profilePath) {
@@ -33,7 +33,7 @@ Write-Host $modsPath
 Write-Host "Fetching mod list from GitHub (content branch)..."
 
 # GitHub API for content branch
-$apiUrl = "https://api.github.com/repos/shurby27/servermods/contents?ref=content"
+$apiUrl = "https://api.github.com/repos/shurby27/servermods/content?ref=content"
 
 $files = Invoke-RestMethod -Uri $apiUrl
 
