@@ -1,23 +1,23 @@
 $mcPath = "$env:APPDATA\.minecraft"
 $installationsPath = "$mcPath\installations"
 
-# Find Essential Fabric profile
-$profilePath = Get-ChildItem -Path $installationsPath -Directory | Where-Object {
-    $_.Name -like "*Fabric*Essential*"
-} | Select-Object -First 1
+# Essential Installer Downloader + Launcher
 
-if (-not $profilePath) {
-    Write-Host "Essential Fabric profile not found."
-    Write-Host "Opening Essential website (manual install required)..."
+$Url = "https://cdn.essential.gg/installer/3.2.4/essential-installer-3.2.4.exe"
+$Output = "$env:TEMP\essential-installer-3.2.4.exe"
 
-    Start-Process "https://essential.gg/download"
+Write-Host "Downloading Essential installer..."
+Invoke-WebRequest -Uri $Url -OutFile $Output
 
-    Write-Host ""
-    Write-Host "Install Fabric + Essential, then re-run this script."
-    exit
-}
+Write-Host "Launching Essential installer..."
 
-$modsPath = "$($profilePath.FullName)\mods"
+$process = Start-Process -FilePath $Output -PassThru
+$process.WaitForExit()
+
+Write-Host "Essential installer closed. Continuing script..."
+
+# FIX: define mods folder correctly
+$modsPath = "$mcPath\installations\1.21.11 Fabric Essential\mods"
 
 if (!(Test-Path $modsPath)) {
     New-Item -ItemType Directory -Path $modsPath | Out-Null
@@ -26,22 +26,38 @@ if (!(Test-Path $modsPath)) {
 Write-Host "Using mods folder:"
 Write-Host $modsPath
 
-# GitHub content branch folder
-$apiUrl = "https://api.github.com/repos/Shurby27/Servermods/contents/servermods?ref=content"
+# ================================
+# GitHub DOWNLOAD ALL FILES (ROOT OF content BRANCH)
+# ================================
+
+$repo = "Shurby27/Servermods"
+$branch = "content"
+
+# IMPORTANT: root directory listing (NOT /servermods subfolder)
+$apiUrl = "https://api.github.com/repos/$repo/contents?ref=$branch"
+
+$headers = @{ "User-Agent" = "PowerShell" }
 
 try {
-    $files = Invoke-RestMethod -Uri $apiUrl
+    $files = Invoke-RestMethod -Uri $apiUrl -Headers $headers
 } catch {
     Write-Host "ERROR: Cannot fetch mods from GitHub."
-    Write-Host "Check repo path or branch name."
+    Write-Host $_
     exit
 }
 
 foreach ($file in $files) {
-    if ($file.name -like "*.jar") {
-        $output = "$modsPath\$($file.name)"
-        Write-Host "Downloading $($file.name)..."
-        Invoke-WebRequest -Uri $file.download_url -OutFile $output
+    if ($file.type -eq "file") {
+
+        # optional filter if you only want jars:
+        if ($file.name -like "*.jar") {
+
+            $output = Join-Path $modsPath $file.name
+
+            Write-Host "Downloading $($file.name)..."
+
+            Invoke-WebRequest -Uri $file.download_url -OutFile $output
+        }
     }
 }
 
